@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using System.Collections.Specialized;
+using System.Data;
 using InsertingExample.DataModel;
 using MongoDB.Driver;
 using MongoDB.Bson;
@@ -31,8 +31,12 @@ namespace InsertingExample
             var mdbConnectionString = "mongodb://localhost:27017";
             var mdbClient = new MongoClient(mdbConnectionString);
             IMongoDatabase db = mdbClient.GetDatabase(dbName);
-            //await db.CreateCollectionAsync("students");
-            IMongoCollection<Student> students = db.GetCollection<Student>(nameof(students));
+            IMongoCollection<Student> students;
+            await db.DropCollectionAsync(nameof(students));
+            students = db.GetCollection<Student>(nameof(students));
+            await students.Indexes.CreateOneAsync(
+                Builders<Student>.IndexKeys.Ascending(s => s.LastName),
+                new CreateIndexOptions { Unique = true});
             var studentCollection = new List<Student>
             {
                 new Student
@@ -58,6 +62,14 @@ namespace InsertingExample
                     Age = 66,
                     Class = "MUS 1",
                     Subjects = new List<string> { "Music", "Philosophy", "History of religion" } 
+                },
+                new Student
+                {
+                    FirstName = "Harrison",
+                    LastName = "Ford",
+                    Age = 64,
+                    Class = "MUS 1",
+                    Subjects = new List<string> { "Music", "Philosophy" }
                 }
             };
             await students.InsertManyAsync(studentCollection);
