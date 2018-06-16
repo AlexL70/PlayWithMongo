@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using InsertingExample.DataModel;
 using MongoDB.Driver;
 using MongoDB.Bson;
@@ -60,28 +61,34 @@ namespace InsertingExample
                 }
             };
             await students.InsertManyAsync(studentCollection);
-            //await students.InsertOneAsync(new Student
-            //{
-            //    FirstName = "Peter",
-            //    LastName = "Gabriel",
-            //    Age = 55,
-            //    Class = "JSS 3",
-            //    Subjects = new List<string> {"English", "Math", "Physics"}
-            //});
-            var collection = db.GetCollection<BsonDocument>(nameof(students));
-            using (IAsyncCursor<BsonDocument> cursor = await collection.FindAsync(new BsonDocument()))
+            var collection = db.GetCollection<StudentExt>(nameof(students));
+            await PrintCollection(collection);
+            Console.WriteLine();
+            Console.WriteLine("Filtered Collection");
+            await PrintFilteredByLastName(collection, "Harrison");
+            await db.DropCollectionAsync(nameof(students));
+        }
+
+        private static async Task PrintFilteredByLastName(IMongoCollection<StudentExt> students, string lastName)
+        {
+            var filter = new BsonDocument(nameof(StudentExt.LastName), lastName);
+            await students.Find(filter).ForEachAsync(doc => Console.WriteLine(doc));
+        }
+
+        private static async Task PrintCollection(IMongoCollection<StudentExt> collection)
+        {
+            using (IAsyncCursor<StudentExt> cursor = await collection.FindAsync(new BsonDocument()))
             {
                 while (await cursor.MoveNextAsync())
                 {
-                    IEnumerable<BsonDocument> batch = cursor.Current;
-                    foreach (BsonDocument document in batch)
+                    IEnumerable<StudentExt> batch = cursor.Current;
+                    foreach (StudentExt student in batch)
                     {
-                        Console.WriteLine(document);
+                        Console.WriteLine(student);
                         Console.WriteLine();
                     }
                 }
             }
-            await db.DropCollectionAsync(nameof(students));
         }
     }
 }
