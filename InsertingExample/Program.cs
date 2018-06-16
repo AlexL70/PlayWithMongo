@@ -71,8 +71,7 @@ namespace InsertingExample
 
         private static async Task PrintFilteredByLastName(IMongoCollection<StudentExt> students, string lastName)
         {
-            var filter = new BsonDocument(nameof(StudentExt.LastName), lastName);
-            await students.Find(filter).ForEachAsync(doc => Console.WriteLine(doc));
+            await students.Find(st => st.LastName == lastName).ForEachAsync(doc => Console.WriteLine(doc));
         }
 
         private static async Task PrintCollection(IMongoCollection<StudentExt> collection)
